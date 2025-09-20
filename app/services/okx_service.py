@@ -1,58 +1,65 @@
-import hmac
+# app/services/okx_service.py
+
 import base64
-import httpx
+import hashlib
+import hmac
+import json
 from datetime import datetime, timezone
+import httpx
 from app.core.config import settings
 
 
-def get_okx_timestamp() -> str:
-    """Return UTC timestamp in ISO 8601 format with milliseconds (required by OKX)."""
-    return (
-        datetime.utcnow()
-        .replace(tzinfo=timezone.utc)
-        .isoformat(timespec="milliseconds")
-        .replace("+00:00", "Z")
-    )
+def _okx_timestamp() -> str:
+    """Generate ISO8601 UTC timestamp with milliseconds (preferred by OKX)."""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-def okx_signature(secret_key: str, timestamp: str, method: str, request_path: str, body: str = "") -> str:
-    """Generate OKX API signature."""
-    message = f"{timestamp}{method}{request_path}{body}"
-    mac = hmac.new(secret_key.encode("utf-8"), message.encode("utf-8"), digestmod="sha256")
-    return base64.b64encode(mac.digest()).decode()
+def _okx_headers(method: str, request_path: str, body: dict = None):
+    """Generate OKX authentication headers."""
+    timestamp = _okx_timestamp()
+    body_str = json.dumps(body) if body else ""
+
+    message = f"{timestamp}{method}{request_path}{body_str}"
+    sign = hmac.new(
+        settings.OKX_SECRET_KEY.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).digest()
+    sign_b64 = base64.b64encode(sign).decode()
+
+    return {
+        "OK-ACCESS-KEY": settings.OKX_API_KEY,
+        "OK-ACCESS-SIGN": sign_b64,
+        "OK-ACCESS-TIMESTAMP": timestamp,
+        "OK-ACCESS-PASSPHRASE": settings.OKX_PASSPHRASE,
+        "Content-Type": "application/json"
+    }
 
 
-async def create_okx_deposit_address(user_id: int, amount: float, currency: str = "USDT"):
-    """
-    Calls OKX API to get a deposit address for a given currency.
-    user_id and amount are internal only, not sent to OKX.
-    """
-    try:
-        timestamp = get_okx_timestamp()
-        method = "GET"
-        request_path = f"/api/v5/asset/deposit-address?ccy={currency}"
-        body = ""
+async def create_okx_deposit_address(currency: str = "USDT"):
+    """Request a deposit address from OKX."""
+    endpoint = f"/api/v5/asset/deposit-address?ccy={currency}"
+    url = f"{settings.OKX_BASE_URL}{endpoint}"
+    headers = _okx_headers("GET", endpoint)
 
-        # ✅ Generate signature
-        sign = okx_signature(settings.OKX_SECRET_KEY, timestamp, method, request_path, body)
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url, headers=headers)
+        if r.status_code != 200:
+            raise Exception(f"OKX deposit error: {r.text}")
+        return r.json()
 
-        headers = {
-            "OK-ACCESS-KEY": settings.OKX_API_KEY,
-            "OK-ACCESS-SIGN": sign,
-            "OK-ACCESS-TIMESTAMP": timestamp,
-            "OK-ACCESS-PASSPHRASE": settings.OKX_PASSPHRASE,
-            "Content-Type": "application/json",
-        }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{settings.OKX_BASE_URL}{request_path}",
-                headers=headers,
-                timeout=30,
-            )
+async def proxy_okx_request(method: str, endpoint: str, body: dict = None):
+    """General proxy for OKX API requests."""
+    url = f"{settings.OKX_BASE_URL}{endpoint}"
+    headers = _okx_headers(method, endpoint, body)
 
-            response.raise_for_status()
-            return response.json()
+    async with httpx.AsyncClient(timeout=10) as client:
+        if method == "GET":
+            r = await client.get(url, headers=headers)
+        else:
+            r = await client.post(url, headers=headers, json=body or {})
 
-    except Exception as e:
-        raise Exception(f"OKX deposit error: {e}")
+        if r.status_code != 200:
+            raise Exception(f"OKX request error: {r.text}")
+        return r.json()

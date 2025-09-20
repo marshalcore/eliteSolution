@@ -9,13 +9,26 @@ router = APIRouter(prefix="/deposit", tags=["Deposit"])
 
 
 @router.post("/okx")
-async def deposit_okx(user_id: int, amount: float, db: Session = Depends(get_db)):
+async def deposit_okx(user_id: int, amount: float, currency: str = "USDT", db: Session = Depends(get_db)):
     """
     Create an OKX deposit address for the user.
+    - user_id: internal user ID
+    - amount: deposit amount (your own bookkeeping)
+    - currency: token symbol (default USDT)
     """
     try:
-        result = await create_okx_deposit_address(user_id, amount)
-        return {"provider": "OKX", "data": result}
+        # Only send currency to OKX
+        okx_response = await create_okx_deposit_address(currency)
+
+        # TODO: Optionally log user_id, amount, and okx_response into your DB with `db`
+
+        return {
+            "provider": "OKX",
+            "user_id": user_id,
+            "amount": amount,
+            "currency": currency,
+            "okx": okx_response
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"OKX deposit error: {str(e)}")
 

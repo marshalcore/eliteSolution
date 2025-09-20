@@ -31,3 +31,6 @@ class User(Base):
     payments = relationship("Payment", back_populates="user", cascade="all, delete")
     otps = relationship("OTP", back_populates="user", cascade="all, delete-orphan")
     cards = relationship("Card", back_populates="user")
+
+    # ✅ New relationship for deposits
+    deposits = relationship("Deposit", back_populates="user", cascade="all, delete-orphan")
