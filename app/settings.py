@@ -27,6 +27,11 @@ class Settings:
     OKX_SECRET_KEY: str = os.getenv("OKX_SECRET_KEY", "")
     OKX_PASSPHRASE: str = os.getenv("OKX_PASSPHRASE", "")
 
+    # === BACKEND URLS ===
+    # Default to localhost, override in Render environment
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    OKX_BASE_URL: str = os.getenv("OKX_BASE_URL", "https://www.okx.com")
+
     # === DEBUG MODE ===
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     

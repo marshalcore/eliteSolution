@@ -1,3 +1,4 @@
+# app/api/admin.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,8 @@ from app.core.security import (
     create_access_token,
     get_current_user_db,
 )
+from app.services.email_validator import validate_email_address
+
 
 # ----------------------------
 #  AUTH HELPERS
@@ -37,6 +40,10 @@ router = APIRouter(
 # ----------------------------
 @router.post("/register")
 def admin_register(data: AdminCreate, db: Session = Depends(get_db)):
+    # ✅ Validate email before creating admin
+    if not validate_email_address(data.email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Admin already exists")
@@ -231,7 +238,11 @@ def update_user_details(
         raise HTTPException(status_code=404, detail="User not found")
 
     if email:
+        # ✅ validate before updating
+        if not validate_email_address(email):
+            raise HTTPException(status_code=400, detail="Invalid email format")
         user.email = email
+
     if phone:
         user.phone = phone
 

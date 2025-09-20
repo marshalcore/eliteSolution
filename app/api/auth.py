@@ -12,6 +12,9 @@ from app.models.account import Account
 from app.core.security import get_password_hash, verify_password, create_access_token
 from app.services.utils import generate_account_number
 from app.services.otp_service import generate_otp, send_otp_email, verify_otp
+from app.services.email_validator import validate_email_address
+
+
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -22,13 +25,17 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 @router.post("/register")
 def register(user_in: UserCreate, db: Session = Depends(get_db)):
     """Register a new user and send OTP for email verification."""
-    existing = db.query(User).filter(User.email == user_in.email).first()
+
+    # ✅ Validate and clean email
+    clean_email = validate_email_address(user_in.email)
+
+    existing = db.query(User).filter(User.email == clean_email).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
 
     hashed = get_password_hash(user_in.password)
     user = User(
-        email=user_in.email,
+        email=clean_email,
         first_name=user_in.first_name,
         last_name=user_in.last_name,
         phone=user_in.phone,
@@ -53,9 +60,7 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
             <td align="center">
               <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="border-radius:8px; overflow:hidden;">
                 <tr bgcolor="#004080">
-                  <td style="padding:20px; text-align:center;">
-                
-                  </td>
+                  <td style="padding:20px; text-align:center;"></td>
                 </tr>
                 <tr>
                   <td style="padding:30px; text-align:center;">
@@ -88,7 +93,11 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 @router.post("/verify-registration")
 def verify_registration(otp_data: OTPVerify, db: Session = Depends(get_db)):
     """Verify OTP for registration and activate account."""
-    user = db.query(User).filter(User.email == otp_data.email).first()
+
+    # ✅ Validate email from OTP payload
+    clean_email = validate_email_address(otp_data.email)
+
+    user = db.query(User).filter(User.email == clean_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -122,7 +131,11 @@ def verify_registration(otp_data: OTPVerify, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login user and send OTP for 2FA."""
-    user = db.query(User).filter(User.email == form_data.username).first()
+
+    # ✅ Validate email from login form
+    clean_email = validate_email_address(form_data.username)
+
+    user = db.query(User).filter(User.email == clean_email).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -141,9 +154,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             <td align="center">
               <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="border-radius:8px; overflow:hidden;">
                 <tr bgcolor="#004080">
-                  <td style="padding:20px; text-align:center;">
-                    
-                  </td>
+                  <td style="padding:20px; text-align:center;"></td>
                 </tr>
                 <tr>
                   <td style="padding:30px; text-align:center;">
@@ -175,7 +186,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 @router.post("/verify-login")
 def verify_login(otp_data: OTPVerify, db: Session = Depends(get_db)):
     """Verify OTP for login and return JWT."""
-    user = db.query(User).filter(User.email == otp_data.email).first()
+
+    # ✅ Validate email from OTP payload
+    clean_email = validate_email_address(otp_data.email)
+
+    user = db.query(User).filter(User.email == clean_email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

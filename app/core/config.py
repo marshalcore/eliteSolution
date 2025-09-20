@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     OKX_PASSPHRASE: str
     OKX_BASE_URL: str = "https://www.okx.com"
 
+    # Backend (for proxying requests if needed)
+    BACKEND_URL: str = "http://127.0.0.1:8000"  # ✅ default local
+
     # Debug mode
     DEBUG: bool = True
 
