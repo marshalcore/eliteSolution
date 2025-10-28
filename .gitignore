@@ -1,75 +1,47 @@
-﻿# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+﻿# Environment files - DO NOT TRACK
+.env
+.env.local
+.env.production
+.env.development
 
-# Virtual environments - IGNORE venv folder
+# Secrets and tokens
+admin_token.txt
+*.key
+*.pem
+*.crt
+
+# Database files
+*.db
+*.sqlite3
+test.db
+
+# API keys and configs
+*config*.json
+*secret*
+*password*
+
+# Virtual environment
 venv/
-env/
 .venv/
-ENV/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-
-# Database
-*.db
-*.sqlite3
-test.db
 
 # Logs
 *.log
 logs/
 
-# Environment files (keep but don't track sensitive data)
-.env
-.env.local
-
 # Docker
 .dockerignore
-
-# Testing
-.coverage
-.pytest_cache/
-htmlcov/
-
-# Static files (can be large)
-static/kyc_documents/
-static/profile_pictures/
-static/uploads/
-
-# Temporary files
-temp/
-tmp/
