@@ -7,17 +7,18 @@ import enum
 
 
 class OTPPurpose(enum.Enum):
-    # User flows
-    REGISTRATION = "REGISTRATION"
-    LOGIN = "LOGIN"
-    TRANSFER = "TRANSFER"
-    WITHDRAWAL = "WITHDRAWAL"
-    PASSWORD_RESET = "PASSWORD_RESET"
-    KYC_VERIFICATION = "KYC_VERIFICATION"
+    # User flows - Use lowercase for consistency
+    REGISTRATION = "registration"
+    LOGIN = "login"
+    TRANSFER = "transfer"
+    WITHDRAWAL = "withdrawal"
+    PASSWORD_RESET = "password_reset"
+    KYC_VERIFICATION = "kyc_verification"
+    PIN_RESET = "pin_reset"  # ✅ ADDED: For PIN reset functionality
 
     # Admin flows
-    ADMIN_REGISTRATION = "ADMIN_REGISTRATION"
-    ADMIN_LOGIN = "ADMIN_LOGIN"
+    ADMIN_REGISTRATION = "admin_registration"
+    ADMIN_LOGIN = "admin_login"
 
 
 class OTP(Base):

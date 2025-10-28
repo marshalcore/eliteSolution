@@ -1,3 +1,4 @@
+# app/models/__init__.py
 from app.db.base_class import Base  # ✅ import Base here
 
 from .user import User
@@ -7,8 +8,10 @@ from .card import Card
 from .payment import Payment
 from .transaction import Transaction
 from .otp import OTP
-from .audit_log import AuditLog  # ✅ Changed from Audit_log to AuditLog
-
+from .audit_log import AuditLog  
+from .deposit import Deposit
+from .pin import UserPIN
+from .withdrawal_account import WithdrawalAccount  # ✅ ADDED: Import WithdrawalAccount
 
 __all__ = [
     "Base",
@@ -19,5 +22,8 @@ __all__ = [
     "Payment",
     "Bank",
     "OTP",
-    "AuditLog",  # ✅ Added AuditLog to __all__
+    "AuditLog",  
+    "Deposit",
+    "UserPIN",
+    "WithdrawalAccount",  # ✅ ADDED: Include in exports
 ]

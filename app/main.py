@@ -1,58 +1,44 @@
-# main.py
-from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi
+﻿from fastapi import FastAPI
+from datetime import datetime
+import os
 
-from app.db import Base, engine
-from app.api import auth, admin, accounts, transactions, deposit, otp, webhooks
-from app.api import utils
-from app.core.config import settings
+app = FastAPI(
+    title="EliteSolution Financial API",
+    description="Enterprise-grade financial solution",
+    version="1.0.0"
+)
 
+@app.get("/")
+async def root():
+    return {
+        "message": "EliteSolution Financial API", 
+        "status": "operational",
+        "timestamp": datetime.utcnow().isoformat(),
+        "environment": os.getenv("ENVIRONMENT", "development")
+    }
 
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.PROJECT_NAME,
-        openapi_url=f"{settings.API_V1_STR}/openapi.json"
-    )
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "elitesolution-api",
+        "version": "1.0.0"
+    }
 
-    # Routers
-    app.include_router(auth.router)
-    app.include_router(admin.router)
-    app.include_router(accounts.router)
-    app.include_router(transactions.router)
-    app.include_router(deposit.router)
-    app.include_router(otp.router)
-    app.include_router(webhooks.router)
-    app.include_router(utils.router)
+# Include your existing routers if they exist
+try:
+    from app.api import auth, accounts, admin, kyc, transactions, deposit, payments
+    app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+    app.include_router(accounts.router, prefix="/api/v1/accounts", tags=["Accounts"])
+    app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
+    app.include_router(kyc.router, prefix="/api/v1/kyc", tags=["KYC"])
+    app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])
+    app.include_router(deposit.router, prefix="/api/v1/deposit", tags=["Deposit"])
+    app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+except ImportError as e:
+    print(f"Some modules not available: {e}")
 
-    # ✅ Custom OpenAPI for JWT Bearer
-    def custom_openapi():
-        if app.openapi_schema:
-            return app.openapi_schema
-        openapi_schema = get_openapi(
-            title=settings.PROJECT_NAME,
-            version="1.0.0",
-            description="API docs with Bearer token authentication",
-            routes=app.routes,
-        )
-        openapi_schema["components"]["securitySchemes"] = {
-            "BearerAuth": {
-                "type": "http",
-                "scheme": "bearer",
-                "bearerFormat": "JWT",
-            }
-        }
-        # Apply security globally
-        for path in openapi_schema["paths"].values():
-            for method in path.values():
-                method.setdefault("security", [{"BearerAuth": []}])
-        app.openapi_schema = openapi_schema
-        return app.openapi_schema
-
-    app.openapi = custom_openapi
-
-    return app
-
-
-# ✅ Create DB tables if not existing
-Base.metadata.create_all(bind=engine)
-app = create_app()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,7 +1,12 @@
-# app/api/__init__.py
+# app/api/__init__.py - UPDATED
+from fastapi import APIRouter
+from app.api import auth, webhooks, payments, pin  # ✅ ADD pin import
 
-from . import auth
-from . import webhooks
-from . import payments
+api_router = APIRouter()
 
-__all__ = ["auth", "webhooks", "payments"]
+api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])
+api_router.include_router(webhooks.router, prefix="/webhooks", tags=["webhooks"])
+api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
+api_router.include_router(pin.router, prefix="/pin", tags=["pin"])  # ✅ ADD PIN ROUTER
+
+__all__ = ["auth", "webhooks", "payments", "pin"]  # ✅ ADD pin to exports

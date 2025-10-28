@@ -1,21 +1,28 @@
+# app/db/database.py
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from app.core.config import settings
 
-# Replace with your actual DB connection string
-# Example for SQLite (development):
-DATABASE_URL = "postgresql://neondb_owner:npg_n9UeXrOA4Kaw@ep-green-credit-a19hsnai-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-
-# Example for PostgreSQL:
-# DATABASE_URL = "postgresql://user:password@localhost:5432/mydb"
-
-# Create SQLAlchemy engine
-ENGINE = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+# Create engine
+engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    pool_size=10,
+    max_overflow=20,
 )
 
-# Create a session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=ENGINE)
+# Create session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for models
 Base = declarative_base()
+
+# Database dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

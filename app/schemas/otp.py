@@ -10,10 +10,12 @@ class OTPBase(BaseModel):
 
 
 class OTPCreate(OTPBase):
+    email: EmailStr
     code: str = Field(..., min_length=6, max_length=6)
 
 
 class OTPVerify(OTPBase):
+    email: EmailStr
     code: str = Field(..., min_length=6, max_length=6)
 
 

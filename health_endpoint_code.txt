@@ -1,0 +1,70 @@
+﻿# Add this to the end of your main.py file, before the if __name__ block
+
+# Health check endpoint
+@app.get("/health", include_in_schema=True)
+async def health_check():
+    from datetime import datetime
+    from app.core.redis import redis_client
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Check database connection
+        db_healthy = False
+        try:
+            db = SessionLocal()
+            db.execute(text("SELECT 1"))
+            db.close()
+            db_healthy = True
+            logger.info("Database health check: OK")
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+            db_healthy = False
+
+        # Check Redis connection
+        redis_healthy = redis_client.health_check()
+        if redis_healthy:
+            logger.info("Redis health check: OK")
+        else:
+            logger.warning("Redis health check: Failed")
+
+        # Overall status
+        overall_healthy = db_healthy and redis_healthy
+        status_code = 200 if overall_healthy else 503
+
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "status": "healthy" if overall_healthy else "unhealthy",
+                "database": "connected" if db_healthy else "disconnected",
+                "redis": "connected" if redis_healthy else "disconnected",
+                "timestamp": datetime.utcnow().isoformat(),
+                "service": "elitesolution-financial-api",
+                "version": "1.0.0"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Health check endpoint error: {e}")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
+# Simple root endpoint
+@app.get("/", include_in_schema=True)
+async def root():
+    from datetime import datetime
+    return {
+        "message": "EliteSolution Financial API",
+        "status": "operational", 
+        "version": "1.0.0",
+        "timestamp": datetime.utcnow().isoformat()
+    }
